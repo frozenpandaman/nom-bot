@@ -1,1 +1,1 @@
-worker: python nombot.py
+worker: python3 nombot.py
