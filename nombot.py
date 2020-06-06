@@ -7,9 +7,16 @@ NOMS_FILE =  os.path.join(sys.path[0], 'noms.txt')
 # connect to postgresql db for storing noms
 DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
-cur = conn.cursor()
 
 client = discord.Client()
+
+def update_noms(dic, cur):
+		newrows = []
+		for key, value in dic.items():
+			row = {"id": key, "noms": value}
+			newrows.append(row)
+		namedict = tuple(newrows)
+		cur.executemany('INSERT INTO public.noms(id,noms) VALUES (%(id)s, %(noms)s)', namedict)
 
 @client.event
 async def on_ready():
@@ -26,48 +33,52 @@ async def on_message(message):
 		nickname = str(user[0].nick).strip()
 		msg_user_id = str(user[0].id).strip()
 
-		with open(NOMS_FILE,'r+') as file:
-			dict = json.load(file)
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM public.noms')
+		rows = cur.fetchall()
+		dic = dict(rows)
 
-			for file_user_id, noms in dict.items():
-				if str(file_user_id).strip() == msg_user_id:
-					dict[file_user_id] = dict[file_user_id] + 1
+		for file_user_id, noms in dic.items():
+			if str(file_user_id).strip() == msg_user_id:
+				dic[file_user_id] = dic[file_user_id] + 1
 
-			if msg_user_id not in dict:
-				dict[msg_user_id] = 1 # new user has been nommed once
+		if msg_user_id not in dic:
+			dic[msg_user_id] = 1 # new user has been nommed once
 
-		with open(NOMS_FILE,'w') as file:
-			json.dump(dict, file)
-
+		update_noms(dic, cur)
+		cur.close()
 		await message.channel.send('<:nom:716879079894286376> {} has been nommed.'.format(nickname))
-
 
 	if message.content.startswith('<unnom '):
 		user = message.mentions
 		nickname = str(user[0].nick).strip()
 		msg_user_id = str(user[0].id).strip()
 
-		with open(NOMS_FILE,'r+') as file:
-			dict = json.load(file)
-			for file_user_id, noms in dict.items():
-				if str(file_user_id).strip() == msg_user_id:
-					dict[file_user_id] = dict[file_user_id] - 1
-					# disallow negative noms
-					if dict[file_user_id] < 0:
-						dict[file_user_id] = 0
+		cur = conn.cursor()
+		cur.execute('SELECT * FROM public.noms')
+		rows = cur.fetchall()
+		dic = dict(rows)
 
-		with open(NOMS_FILE,'w') as file:
-			json.dump(dict, file)
+		for file_user_id, noms in dic.items():
+			if str(file_user_id).strip() == msg_user_id:
+				dic[file_user_id] = dic[file_user_id] - 1
+				# disallow negative noms
+				if dic[file_user_id] < 0:
+					dic[file_user_id] = 0
 
+		update_noms(dic, cur)
+		cur.close()
 		await message.channel.send('<:nom:716879079894286376> {} has been unnommed.'.format(nickname))
-
 
 	if message.content.startswith('<noms'):
 		listofnoms = ""
 
+		cur = conn.cursor()
 		cur.execute('SELECT * FROM public.noms')
-		dict = json.dumps(cur.fetchall())
-		for user_id, noms in dict.items():
+		rows = cur.fetchall()
+		cur.close()
+		dic = dict(rows)
+		for user_id, noms in dic.items():
 			for user in message.guild.members:
 				if str(user.id).strip() == str(user_id).strip():
 					nickname = user.nick
