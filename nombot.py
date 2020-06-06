@@ -1,4 +1,7 @@
-import discord, json
+import discord, json, os, sys
+
+NOMS_FILE =  os.path.join(sys.path[0], 'noms.txt')
+TOKEN_FILE = os.path.join(sys.path[0], 'token.txt')
 
 client = discord.Client()
 
@@ -17,7 +20,7 @@ async def on_message(message):
 		nickname = str(user[0].nick).strip()
 		msg_user_id = str(user[0].id).strip()
 
-		with open('noms.txt','r+') as file:
+		with open(NOMS_FILE,'r+') as file:
 			dict = json.load(file)
 
 			for file_user_id, noms in dict.items():
@@ -27,7 +30,7 @@ async def on_message(message):
 			if msg_user_id not in dict:
 				dict[msg_user_id] = 1 # new user has been nommed once
 
-		with open('noms.txt','w') as file:
+		with open(NOMS_FILE,'w') as file:
 			json.dump(dict, file)
 
 		await message.channel.send('<:nom:716879079894286376> {} has been nommed.'.format(nickname))
@@ -38,7 +41,7 @@ async def on_message(message):
 		nickname = str(user[0].nick).strip()
 		msg_user_id = str(user[0].id).strip()
 
-		with open('noms.txt','r+') as file:
+		with open(NOMS_FILE,'r+') as file:
 			dict = json.load(file)
 			for file_user_id, noms in dict.items():
 				if str(file_user_id).strip() == msg_user_id:
@@ -47,7 +50,7 @@ async def on_message(message):
 					if dict[file_user_id] < 0:
 						dict[file_user_id] = 0
 
-		with open('noms.txt','w') as file:
+		with open(NOMS_FILE,'w') as file:
 			json.dump(dict, file)
 
 		await message.channel.send('<:nom:716879079894286376> {} has been unnommed.'.format(nickname))
@@ -55,7 +58,7 @@ async def on_message(message):
 
 	if message.content.startswith('<noms'):
 		listofnoms = ""
-		with open('noms.txt','r') as file:
+		with open(NOMS_FILE,'r') as file:
 			dict = json.load(file)
 			for user_id, noms in dict.items():
 				for user in message.guild.members:
@@ -66,7 +69,7 @@ async def on_message(message):
 
 # TODO: random noms in #nom-spam
 
-with open('token.txt','r') as f:
+with open(TOKEN_FILE,'r') as f:
 	line = f.readlines()
 	token = line[0].strip()
 client.run(token)
