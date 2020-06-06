@@ -1,7 +1,13 @@
-import discord, json, os, sys
+import discord
+import json, os, sys
+import asyncpg, psycopg2
 
 NOMS_FILE =  os.path.join(sys.path[0], 'noms.txt')
-TOKEN_FILE = os.path.join(sys.path[0], 'token.txt')
+
+# connect to postgresql db for storing noms
+DATABASE_URL = os.environ['DATABASE_URL']
+conn = psycopg2.connect(DATABASE_URL, sslmode='require')
+cur = conn.cursor()
 
 client = discord.Client()
 
@@ -58,18 +64,16 @@ async def on_message(message):
 
 	if message.content.startswith('<noms'):
 		listofnoms = ""
-		with open(NOMS_FILE,'r') as file:
-			dict = json.load(file)
-			for user_id, noms in dict.items():
-				for user in message.guild.members:
-					if str(user.id).strip() == str(user_id).strip():
-						nickname = user.nick
-						listofnoms = listofnoms + ("{}: {}".format(nickname, noms)) + "\n"
+
+		cur.execute('SELECT * FROM public.noms')
+		dict = json.dumps(cur.fetchall())
+		for user_id, noms in dict.items():
+			for user in message.guild.members:
+				if str(user.id).strip() == str(user_id).strip():
+					nickname = user.nick
+					listofnoms = listofnoms + ("{}: {}".format(nickname, noms)) + "\n"
 		await message.channel.send("List of <:nom:716879079894286376>s:\n" + listofnoms)
 
 # TODO: random noms in #nom-spam
 
-with open(TOKEN_FILE,'r') as f:
-	line = f.readlines()
-	token = line[0].strip()
-client.run(token)
+client.run(os.environ['RATS_NOM_TOKEN'])
