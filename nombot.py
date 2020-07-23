@@ -1,6 +1,7 @@
 import discord
 import json, os, sys
 import asyncpg, psycopg2
+import requests, random
 
 # connect to postgresql db for storing noms
 DATABASE_URL = os.environ['DATABASE_URL']
@@ -99,7 +100,17 @@ async def on_message(message):
 	elif "nom" in message.content.lower():
 		await message.channel.send('Nom.')
 
-
-# TODO: random noms in #nom-spam
+	# RESPOND TO BUN DM
+	elif "bun" in message.content.lower():
+		if message.channel.type == discord.ChannelType.private:
+			buns = "https://www.reddit.com/r/rabbits/new.json?sort=new"
+			r = requests.get(buns, headers={'User-Agent': 'nom bot/0.1'})
+			data = r.json()
+			bun_choices = []
+			for post in data["data"]["children"]:
+				if "i.redd.it" in post["data"]["url"]:
+					bun_choices.append(post["data"]["url"])
+			bun = random.choice(bun_choices)
+			await message.author.send(bun)
 
 client.run(os.environ['RATS_NOM_TOKEN'])
