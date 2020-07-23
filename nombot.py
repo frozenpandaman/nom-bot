@@ -2,8 +2,6 @@ import discord
 import json, os, sys
 import asyncpg, psycopg2
 
-NOMS_FILE =  os.path.join(sys.path[0], 'noms.txt')
-
 # connect to postgresql db for storing noms
 DATABASE_URL = os.environ['DATABASE_URL']
 conn = psycopg2.connect(DATABASE_URL, sslmode='require')
@@ -27,51 +25,61 @@ async def on_message(message):
 	if message.author == client.user:
 		return
 
+	# NOM COMMAND
 	if message.content.startswith('<nom '):
-		user = message.mentions
-		# TODO: allow nomming of multiple users
-		nickname = str(user[0].nick).strip()
-		msg_user_id = str(user[0].id).strip()
+		users = message.mentions
+		for user in users:
+			try: # if role, etc. is mentioned - aka no nickname
+				nickname = str(user.display_name).strip()
+				msg_user_id = str(user.id).strip()
 
-		cur = conn.cursor()
-		cur.execute('SELECT * FROM public.noms')
-		rows = cur.fetchall()
-		dic = dict(rows)
+				cur = conn.cursor()
+				cur.execute('SELECT * FROM public.noms')
+				rows = cur.fetchall()
+				dic = dict(rows)
 
-		for file_user_id, noms in dic.items():
-			if str(file_user_id).strip() == msg_user_id:
-				dic[file_user_id] = dic[file_user_id] + 1
+				for file_user_id, noms in dic.items():
+					if str(file_user_id).strip() == msg_user_id:
+						dic[file_user_id] = dic[file_user_id] + 1
 
-		if msg_user_id not in dic:
-			dic[msg_user_id] = 1 # new user has been nommed once
+				if msg_user_id not in dic:
+					dic[msg_user_id] = 1 # new user has been nommed once
 
-		update_noms(dic, cur)
-		cur.close()
-		await message.channel.send('<:nom:716879079894286376> {} has been nommed.'.format(nickname))
+				update_noms(dic, cur)
+				cur.close()
+				await message.channel.send('<:nom:716879079894286376> {} has been nommed.'.format(nickname))
+			except:
+				pass
 
-	if message.content.startswith('<unnom '):
-		user = message.mentions
-		nickname = str(user[0].nick).strip()
-		msg_user_id = str(user[0].id).strip()
+	# UNNOM COMMAND
+	elif message.content.startswith('<unnom '):
+		users = message.mentions
+		for user in users:
+			try:
+				nickname = str(user.display_name).strip()
+				msg_user_id = str(user.id).strip()
 
-		cur = conn.cursor()
-		cur.execute('SELECT * FROM public.noms')
-		rows = cur.fetchall()
-		dic = dict(rows)
+				cur = conn.cursor()
+				cur.execute('SELECT * FROM public.noms')
+				rows = cur.fetchall()
+				dic = dict(rows)
 
-		for file_user_id, noms in dic.items():
-			if str(file_user_id).strip() == msg_user_id:
-				dic[file_user_id] = dic[file_user_id] - 1
-				# disallow negative noms
-				if dic[file_user_id] < 0:
-					dic[file_user_id] = 0
+				for file_user_id, noms in dic.items():
+					if str(file_user_id).strip() == msg_user_id:
+						dic[file_user_id] = dic[file_user_id] - 1
+						# disallow negative noms
+						if dic[file_user_id] < 0:
+							dic[file_user_id] = 0
 
-		update_noms(dic, cur)
-		cur.close()
-		await message.channel.send('<:nom:716879079894286376> {} has been unnommed.'.format(nickname))
+				update_noms(dic, cur)
+				cur.close()
+				await message.channel.send('<:nom:716879079894286376> {} has been unnommed.'.format(nickname))
+			except:
+				pass
 
-	if message.content.startswith('<noms'):
-		listofnoms = ""
+	# NOMS COMMAND
+	elif message.content.lower() == "<noms":
+		listofnoms = []
 
 		cur = conn.cursor()
 		cur.execute('SELECT * FROM public.noms')
@@ -81,9 +89,16 @@ async def on_message(message):
 		for user_id, noms in dic.items():
 			for user in message.guild.members:
 				if str(user.id).strip() == str(user_id).strip():
-					nickname = user.nick
-					listofnoms = listofnoms + ("{}: {}".format(nickname, noms)) + "\n"
-		await message.channel.send("List of <:nom:716879079894286376>s:\n" + listofnoms)
+					nickname = user.display_name # nickname if available
+					listofnoms.append("{}: {}".format(nickname, noms))
+
+		listofnoms = sorted(listofnoms, key=str.lower)
+		await message.channel.send("List of <:nom:716879079894286376>s:\n" + "\n".join(listofnoms))
+
+	# MESSAGE HAS NOM IN IT
+	elif "nom" in message.content.lower():
+		await message.channel.send('Nom.')
+
 
 # TODO: random noms in #nom-spam
 
