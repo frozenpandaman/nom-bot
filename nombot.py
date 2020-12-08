@@ -115,7 +115,7 @@ async def on_message(message):
 
 	# trigger fishy command, for miso bot
 	elif message.content.lower() == "fishy":
-		wait message.channel.send('>fishy')
+		await message.channel.send('>fishy')
 
 
 client.run(os.environ['RATS_NOM_TOKEN'])
