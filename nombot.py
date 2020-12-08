@@ -100,18 +100,20 @@ async def on_message(message):
 	elif "nom" in message.content.lower():
 		await message.channel.send('Nom.')
 
-	# RESPOND TO BUN DM
-	elif "bun" in message.content.lower():
-		if message.channel.type == discord.ChannelType.private:
-			buns = "https://www.reddit.com/r/rabbits/new.json?sort=new"
-			r = requests.get(buns, headers={'User-Agent': 'nom bot/0.1'})
-			data = r.json()
-			bun_choices = []
-			for post in data["data"]["children"]:
-				if "i.redd.it" in post["data"]["url"]:
-					bun_choices.append(post["data"]["url"])
-			bun = random.choice(bun_choices)
-			await message.author.send(bun)
+	# RESPOND TO BUN DM (or <bun in server)
+	isdm = True if message.channel.type == discord.ChannelType.private else False
+	dm_and_bun = True if isdm and "bun" in message.content.lower() else False
+	bun_command = True if message.content.lower() == "<bun" else False
+	elif dm_and_bun or bun_command:
+		buns = "https://www.reddit.com/r/rabbits/new.json?sort=new"
+		r = requests.get(buns, headers={'User-Agent': 'nom bot/0.1'})
+		data = r.json()
+		bun_choices = []
+		for post in data["data"]["children"]:
+			if "i.redd.it" in post["data"]["url"]:
+				bun_choices.append(post["data"]["url"])
+		bun = random.choice(bun_choices)
+		await message.author.send(bun)
 
 	# trigger fishy command, for miso bot
 	elif message.content.lower() == "fishy":
