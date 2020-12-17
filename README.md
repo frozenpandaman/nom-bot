@@ -7,6 +7,7 @@ Discord bot for nomming people in m's rat chat server.
 * `<nom @rat` – nom a user
 * `<unnom @rat` – unnom a user
 * `<noms` – list all noms
+* `<bun` – send a picture of a bun
 
 ## Requirements
 
