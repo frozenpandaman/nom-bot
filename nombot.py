@@ -134,7 +134,7 @@ async def on_message(message):
 		channel = message.author.voice.channel
 		try:
 			await channel.connect()
-		else:
+		except:
 			pass
 
 
