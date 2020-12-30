@@ -131,7 +131,7 @@ async def on_message(message):
 
 	# voice channel party
 	elif message.content.lower() == "<tok":
-		channel = message.author.voice.voice_channel
+		channel = message.author.voice.channel
 		await channel.connect()
 
 
