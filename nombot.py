@@ -131,9 +131,8 @@ async def on_message(message):
 
 	# voice channel party
 	elif message.content.lower() == "<tok":
-		author = message.author
-		channel = author.voice_channel
-		await bot.join_voice_channel(channel)
+		channel = message.author.voice.voice_channel
+		await channel.connect()
 
 
 client.run(os.environ['RATS_NOM_TOKEN'])
