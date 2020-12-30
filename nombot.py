@@ -129,5 +129,11 @@ async def on_message(message):
 	elif message.content.lower() == "fishy":
 		await message.channel.send('>fishy')
 
+	# voice channel party
+	elif message.content.lower() == "<tok":
+		author = ctx.message.author
+		channel = author.voice_channel
+		await bot.join_voice_channel(channel)
+
 
 client.run(os.environ['RATS_NOM_TOKEN'])
